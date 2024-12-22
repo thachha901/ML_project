@@ -44,22 +44,27 @@ This project focuses on training machine learning models using data from the Kag
      ```python
      data = pd.get_dummies(data, columns=['categorical_column'])
      ```
-   - Scales numeric features using Min-Max scaling:
+   - Scales numeric features using Standard scaling:
      ```python
-     scaler = MinMaxScaler()
+     scaler = StandardScaler()
      data_scaled = scaler.fit_transform(data)
      ```
 
 2. **Model Training**:
    - Trains a LightGBM model with default parameters:
      ```python
-     model = LGBMClassifier()
-     model.fit(X_train, y_train)
-     ```
-   - Performs train-test split:
-     ```python
-     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-     ```
+     Light = LGBMRegressor(**Params, random_state=SEED, verbose=-1, n_estimators=300)
+     XGB_Model = XGBRegressor(**XGB_Params)
+     CatBoost_Model = CatBoostRegressor(**CatBoost_Params)
+     TabNet_Model = TabNetWrapper(**TabNet_Params)
+     voting_model = VotingRegressor(estimators=[
+      ('lightgbm', Light),
+      ('xgboost', XGB_Model),
+      ('catboost', CatBoost_Model),
+      ('tabnet', TabNet_Model)
+    ],weights=[4.0,4.0,5.0,4.0])
+
+Submission,model = TrainML(voting_model,test)
 
 3. **Performance**:
    - Focuses on achieving a high private score, resulting in:
@@ -80,8 +85,13 @@ This project focuses on training machine learning models using data from the Kag
      ```
    - Normalizes numeric features using Robust Scaling:
      ```python
-     scaler = RobustScaler()
-     data_scaled = scaler.fit_transform(data)
+     if scaler_type == 'StandardScaler':
+        scaler = StandardScaler()
+      elif scaler_type == 'RobustScaler':
+        scaler = RobustScaler()
+      else:
+        scaler = MinMaxScaler()
+      data_scaled = scaler.fit_transform(data)
      ```
 
 2. **Feature Engineering**:
