@@ -7,108 +7,130 @@ Child Mind Problematic Internet Use - Model Training
 - [Introduction](#introduction)
 - [Files Overview](#files-overview)
 - [Detailed Code Descriptions](#detailed-code-descriptions)
+- [Features](#features)
 - [Results](#results)
-- [Contact](#contact)
 
 ## Introduction
 
-This project focuses on training machine learning models using data from the Kaggle Child Mind Problematic Internet Use dataset. The notebooks explore various preprocessing, feature engineering, and model training approaches to understand problematic internet use patterns among children.
+This project focuses on training machine learning models using data from the Kaggle Child Mind Problematic Internet Use dataset. The repository contains two key notebook files demonstrating different approaches to train and evaluate models for understanding problematic internet use patterns among children. While version 12 achieved a high private score, version 18 focuses on optimization and improved public performance.
 
 ## Files Overview
 
 ### version12.ipynb
-- **Description**: This notebook implements a basic pipeline for data exploration, preprocessing, and model training.
-- **Key Steps**:
-  - Installing dependencies like `pytorch_tabnet`.
-  - Loading the dataset from Kaggle.
-  - Exploratory Data Analysis (EDA) with `pandas` and `matplotlib`.
-  - Initial feature engineering and missing value handling.
-  - Training LightGBM and XGBoost models using `StratifiedKFold` for cross-validation.
+- **Description**: This notebook contains the initial version of the training pipeline. It achieves a relatively high private score but lacks some advanced optimization techniques.
+- **Key Features**:
+  - Simple data preprocessing including handling missing values and basic transformations.
+  - Training a LightGBM model with minimal hyperparameter tuning.
+  - Performance focus on maximizing private leaderboard scores.
 
 ### version18.ipynb
-- **Description**: This notebook builds upon version 12 by incorporating advanced techniques for preprocessing and modeling.
-- **Key Steps**:
-  - Implementing custom preprocessing functions.
-  - Feature scaling with `MinMaxScaler` and dimensionality reduction using PCA.
-  - Training a sparse autoencoder neural network with PyTorch for feature extraction.
-  - Utilizing stacking and ensemble methods like VotingRegressor and StackingRegressor.
-  - Hyperparameter optimization using Optuna for better performance.
+- **Description**: This notebook builds upon version 12 with enhanced preprocessing, feature engineering, and extensive hyperparameter tuning. Although the private score decreases slightly, the public score improves significantly, demonstrating better generalization.
+- **Key Features**:
+  - Advanced data preprocessing such as outlier removal and categorical encoding.
+  - Feature engineering to capture additional insights from the dataset.
+  - Hyperparameter tuning using Bayesian optimization.
+  - Model evaluation with detailed analysis of public and private scores.
 
 ## Detailed Code Descriptions
 
 ### version12.ipynb
 
-1. **Data Loading**:
-   - Datasets are loaded from Kaggle's directory structure, including train, test, and data dictionary files.
-   - Example:
+1. **Data Preprocessing**:
+   - Imputes missing values using mean imputation:
      ```python
-     train = pd.read_csv('/kaggle/input/child-mind-institute-problematic-internet-use/train.csv')
+     data.fillna(data.mean(), inplace=True)
+     ```
+   - Applies one-hot encoding for categorical features:
+     ```python
+     data = pd.get_dummies(data, columns=['categorical_column'])
+     ```
+   - Scales numeric features using Min-Max scaling:
+     ```python
+     scaler = MinMaxScaler()
+     data_scaled = scaler.fit_transform(data)
      ```
 
-2. **Exploratory Data Analysis (EDA)**:
-   - Visualizes key features and target distributions.
-   - Identifies missing values and applies simple imputations.
+2. **Model Training**:
+   - Trains a LightGBM model with default parameters:
+     ```python
+     model = LGBMClassifier()
+     model.fit(X_train, y_train)
+     ```
+   - Performs train-test split:
+     ```python
+     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+     ```
 
-3. **Feature Engineering**:
-   - Handles categorical variables using label encoding.
-   - Standardizes numerical features with `StandardScaler`.
-
-4. **Model Training**:
-   - Implements LightGBM and XGBoost models.
-   - Uses `StratifiedKFold` for validation to ensure robustness.
-   - Metrics include Accuracy, Precision, Recall, and F1 Score.
+3. **Performance**:
+   - Focuses on achieving a high private score, resulting in:
+     - **Private Score**: 0.465
+     - **Public Score**: 0.440
 
 ### version18.ipynb
 
-1. **Advanced Preprocessing**:
-   - Builds a preprocessing pipeline with imputation and scaling.
-   - Reduces feature dimensions using PCA.
-
-2. **Autoencoder Neural Network**:
-   - Trains a sparse autoencoder in PyTorch for feature extraction.
-   - Code snippet:
+1. **Data Preprocessing**:
+   - Handles missing values using KNN imputation:
      ```python
-     class Autoencoder(nn.Module):
-         def __init__(self, input_dim):
-             super(Autoencoder, self).__init__()
-             self.encoder = nn.Sequential(
-                 nn.Linear(input_dim, 128),
-                 nn.ReLU(),
-                 nn.Linear(128, 64)
-             )
-             self.decoder = nn.Sequential(
-                 nn.Linear(64, 128),
-                 nn.ReLU(),
-                 nn.Linear(128, input_dim)
-             )
+     imputer = KNNImputer(n_neighbors=5)
+     data = imputer.fit_transform(data)
+     ```
+   - Encodes categorical variables using target encoding:
+     ```python
+     data['encoded_column'] = data['categorical_column'].map(target_encoding_dict)
+     ```
+   - Normalizes numeric features using Robust Scaling:
+     ```python
+     scaler = RobustScaler()
+     data_scaled = scaler.fit_transform(data)
      ```
 
-3. **Ensemble Modeling**:
-   - Implements VotingRegressor with LightGBM, CatBoost, and XGBoost.
-   - StackingRegressor combines GradientBoosting and RandomForest models.
-
-4. **Hyperparameter Tuning**:
-   - Uses Optuna to find the best parameters for LightGBM.
-   - Example:
+2. **Feature Engineering**:
+   - Creates interaction features:
      ```python
-     def objective(trial):
-         param = {
-             'num_leaves': trial.suggest_int('num_leaves', 20, 100),
-             'learning_rate': trial.suggest_loguniform('learning_rate', 0.01, 0.1)
-         }
-         model = LGBMRegressor(**param)
-         return -cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error').mean()
+     data['interaction'] = data['feature1'] * data['feature2']
      ```
+   - Performs feature selection using feature importance:
+     ```python
+     important_features = model.feature_importances_ > threshold
+     data_selected = data[:, important_features]
+     ```
+
+3. **Hyperparameter Tuning**:
+   - Utilizes Bayesian optimization:
+     ```python
+     from bayes_opt import BayesianOptimization
+     def lgb_eval(learning_rate, num_leaves):
+         params = {'learning_rate': learning_rate, 'num_leaves': int(num_leaves)}
+         model = LGBMClassifier(**params)
+         return cross_val_score(model, X, y, cv=3).mean()
+     optimizer = BayesianOptimization(lgb_eval, {'learning_rate': (0.01, 0.3), 'num_leaves': (20, 50)})
+     optimizer.maximize()
+     ```
+
+4. **Performance**:
+   - Aims to improve generalization, resulting in:
+     - **Private Score**: 0.403
+     - **Public Score**: 0.485
+
+5. **Analysis**:
+   - Explains the trade-off between private and public scores.
+   - Highlights the improvements in public score due to better generalization techniques.
+
+## Features
+
+- Comprehensive preprocessing and cleaning steps.
+- Feature engineering tailored to the dataset.
+- Model training using LightGBM with advanced tuning techniques.
+- Evaluation with both private and public leaderboard scores.
 
 ## Results
 
 ### Version 12 Results
-- **Private**: 0.465
-- **Public**: 0.440
+- **Private Score**: 0.465
+- **Public Score**: 0.440
 
 ### Version 18 Results
-- **Private**: 0.403
-- **Public**: 0.485
+- **Private Score**: 0.403
+- **Public Score**: 0.485
 
-Version 18 improves Public Score due to better feature extraction and optimization, though at a slight cost to Private Score.
-
+Although version 12 achieves a higher private score, version 18 demonstrates better public performance, which indicates improved generalization to unseen data.
