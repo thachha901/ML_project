@@ -7,103 +7,108 @@ Child Mind Problematic Internet Use - Model Training
 - [Introduction](#introduction)
 - [Files Overview](#files-overview)
 - [Detailed Code Descriptions](#detailed-code-descriptions)
-- [Features](#features)
 - [Results](#results)
 - [Contact](#contact)
 
 ## Introduction
 
-This project focuses on training machine learning models using data from the Kaggle Child Mind Problematic Internet Use dataset. The repository contains two key notebook files demonstrating different approaches to train and evaluate models for understanding problematic internet use patterns among children.
+This project focuses on training machine learning models using data from the Kaggle Child Mind Problematic Internet Use dataset. The notebooks explore various preprocessing, feature engineering, and model training approaches to understand problematic internet use patterns among children.
 
 ## Files Overview
 
 ### version12.ipynb
-
-- **Description**: This notebook contains the initial version of the training pipeline. It includes basic preprocessing steps, feature engineering, and model training using standard techniques.
-- **Key Features**:
-  - Data exploration and cleaning.
-  - Basic feature selection.
-  - Model training and evaluation with initial hyperparameter settings.
-  - Simple visualization of results.
+- **Description**: This notebook implements a basic pipeline for data exploration, preprocessing, and model training.
+- **Key Steps**:
+  - Installing dependencies like `pytorch_tabnet`.
+  - Loading the dataset from Kaggle.
+  - Exploratory Data Analysis (EDA) with `pandas` and `matplotlib`.
+  - Initial feature engineering and missing value handling.
+  - Training LightGBM and XGBoost models using `StratifiedKFold` for cross-validation.
 
 ### version18.ipynb
-
-- **Description**: This notebook builds upon version 12 with optimized preprocessing, advanced feature engineering, and hyperparameter tuning. It introduces additional techniques to improve model performance.
-- **Key Features**:
-  - Enhanced preprocessing pipeline.
-  - Advanced feature engineering methods.
-  - Extensive hyperparameter tuning and cross-validation.
-  - Detailed evaluation metrics and performance comparison.
+- **Description**: This notebook builds upon version 12 by incorporating advanced techniques for preprocessing and modeling.
+- **Key Steps**:
+  - Implementing custom preprocessing functions.
+  - Feature scaling with `MinMaxScaler` and dimensionality reduction using PCA.
+  - Training a sparse autoencoder neural network with PyTorch for feature extraction.
+  - Utilizing stacking and ensemble methods like VotingRegressor and StackingRegressor.
+  - Hyperparameter optimization using Optuna for better performance.
 
 ## Detailed Code Descriptions
 
 ### version12.ipynb
 
-1. **Data Exploration and Cleaning**:
+1. **Data Loading**:
+   - Datasets are loaded from Kaggle's directory structure, including train, test, and data dictionary files.
+   - Example:
+     ```python
+     train = pd.read_csv('/kaggle/input/child-mind-institute-problematic-internet-use/train.csv')
+     ```
 
-   - Loads the dataset using pandas.
-   - Performs basic exploratory data analysis (EDA) to understand the distribution of features and target variables.
-   - Handles missing values and outliers using imputation techniques.
+2. **Exploratory Data Analysis (EDA)**:
+   - Visualizes key features and target distributions.
+   - Identifies missing values and applies simple imputations.
 
-2. **Feature Engineering**:
+3. **Feature Engineering**:
+   - Handles categorical variables using label encoding.
+   - Standardizes numerical features with `StandardScaler`.
 
-   - Constructs new features based on domain knowledge.
-   - Applies feature scaling to normalize the dataset for training.
-
-3. **Model Training**:
-
-   - Uses a basic machine learning algorithm (e.g., Logistic Regression or Decision Tree) to train the model.
-   - Evaluates the model using accuracy, precision, recall, and F1 score metrics.
-
-4. **Visualization**:
-
-   - Includes plots to visualize feature importance and model performance.
+4. **Model Training**:
+   - Implements LightGBM and XGBoost models.
+   - Uses `StratifiedKFold` for validation to ensure robustness.
+   - Metrics include Accuracy, Precision, Recall, and F1 Score.
 
 ### version18.ipynb
 
-1. **Enhanced Preprocessing Pipeline**:
+1. **Advanced Preprocessing**:
+   - Builds a preprocessing pipeline with imputation and scaling.
+   - Reduces feature dimensions using PCA.
 
-   - Implements advanced techniques for handling categorical variables, missing data, and outliers.
-   - Utilizes libraries such as `sklearn` for robust preprocessing.
+2. **Autoencoder Neural Network**:
+   - Trains a sparse autoencoder in PyTorch for feature extraction.
+   - Code snippet:
+     ```python
+     class Autoencoder(nn.Module):
+         def __init__(self, input_dim):
+             super(Autoencoder, self).__init__()
+             self.encoder = nn.Sequential(
+                 nn.Linear(input_dim, 128),
+                 nn.ReLU(),
+                 nn.Linear(128, 64)
+             )
+             self.decoder = nn.Sequential(
+                 nn.Linear(64, 128),
+                 nn.ReLU(),
+                 nn.Linear(128, input_dim)
+             )
+     ```
 
-2. **Advanced Feature Engineering**:
+3. **Ensemble Modeling**:
+   - Implements VotingRegressor with LightGBM, CatBoost, and XGBoost.
+   - StackingRegressor combines GradientBoosting and RandomForest models.
 
-   - Introduces polynomial features and interaction terms to capture complex relationships.
-   - Applies dimensionality reduction techniques like PCA if needed.
-
-3. **Hyperparameter Tuning**:
-
-   - Uses Grid Search or Randomized Search for optimizing model parameters.
-   - Incorporates cross-validation for robust performance evaluation.
-
-4. **Model Training and Evaluation**:
-
-   - Tests multiple algorithms (e.g., Random Forest, Gradient Boosting) for performance comparison.
-   - Evaluates models with comprehensive metrics, including AUC-ROC and confusion matrices.
-
-5. **Visualization and Insights**:
-
-   - Provides advanced plots for model diagnostics and predictions.
-   - Summarizes insights gained from the results, guiding future iterations.
-
-## Features
-
-- Comprehensive preprocessing and cleaning steps.
-- Feature engineering tailored to the dataset.
-- Model training using machine learning algorithms.
-- Evaluation with appropriate metrics for classification problems.
-- Insights from visualizations and performance analysis.
+4. **Hyperparameter Tuning**:
+   - Uses Optuna to find the best parameters for LightGBM.
+   - Example:
+     ```python
+     def objective(trial):
+         param = {
+             'num_leaves': trial.suggest_int('num_leaves', 20, 100),
+             'learning_rate': trial.suggest_loguniform('learning_rate', 0.01, 0.1)
+         }
+         model = LGBMRegressor(**param)
+         return -cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error').mean()
+     ```
 
 ## Results
 
 ### Version 12 Results
-
-- **Private: 0.465**
-- **Public: 0.440**
+- **Private**: 0.465
+- **Public**: 0.440
 
 ### Version 18 Results
-
 - **Private**: 0.403
-- **Public: 0.485**
+- **Public**: 0.485
 
-&#x20;Version 18 uses more advanced techniques, it focuses on improving public scores at the expense of a slight drop in private compared to Version 12.
+Version 18 improves Public Score due to better feature extraction and optimization, though at a slight cost to Private Score.
+
