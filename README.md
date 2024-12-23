@@ -63,14 +63,10 @@ This project focuses on training machine learning models using data from the Kag
       ('xgboost', XGB_Model),
       ('catboost', CatBoost_Model),
       ('tabnet', TabNet_Model)
-     ],weights=[4.0,4.0,5.0,4.0])
-
-
-    Submission,model = TrainML(voting_model,test)
-    ```
-
-
-
+     ],weights=[4.0,4.0,5.0,4.0]
+    Submission,model = TrainML(voting_model,test))
+        ```
+        
 3. **Performance**:
    - Focuses on achieving a high private score, resulting in:
      - **Private Score**: 0.465
